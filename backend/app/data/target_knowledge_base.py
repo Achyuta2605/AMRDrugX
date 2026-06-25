@@ -1,65 +1,78 @@
 TARGET_KNOWLEDGE_BASE = [
     {
+        "id": "kpc2_klebsiella_meropenem",
+        "disease_context": "carbapenem-resistant Klebsiella pneumoniae infection",
         "pathogen": "Klebsiella pneumoniae",
-        "antibiotic": "meropenem",
         "resistance_mechanism": "carbapenem resistance",
         "gene": "blaKPC-2",
-        "resolved_target_name": "KPC-2 beta-lactamase",
-        "target_type": "carbapenemase enzyme",
+        "protein": "KPC-2 beta-lactamase",
         "target_family": "class A beta-lactamase",
         "mechanism_category": "antibiotic hydrolysis",
-        "explanation": (
-            "KPC-2 beta-lactamase is a class A carbapenemase associated with "
-            "carbapenem resistance in Klebsiella pneumoniae. It can hydrolyze "
-            "carbapenem antibiotics such as meropenem."
-        ),
         "evidence_source": "local curated AMR target knowledge base",
+        "search_text": (
+            "Disease context: carbapenem-resistant Klebsiella pneumoniae infection. "
+            "Pathogen: Klebsiella pneumoniae. Resistance mechanism: carbapenem resistance. "
+            "Gene: blaKPC-2. Protein: KPC-2 beta-lactamase. "
+            "Target family: class A beta-lactamase. "
+            "Mechanism category: antibiotic hydrolysis. "
+            "This target is associated with carbapenem resistance and meropenem resistance."
+        ),
     },
     {
+        "id": "ctxm15_ecoli_cefotaxime",
+        "disease_context": "extended-spectrum beta-lactam resistant Escherichia coli infection",
         "pathogen": "Escherichia coli",
-        "antibiotic": "cefotaxime",
         "resistance_mechanism": "extended-spectrum beta-lactam resistance",
         "gene": "blaCTX-M-15",
-        "resolved_target_name": "CTX-M-15 beta-lactamase",
-        "target_type": "extended-spectrum beta-lactamase enzyme",
+        "protein": "CTX-M-15 beta-lactamase",
         "target_family": "class A beta-lactamase",
         "mechanism_category": "antibiotic hydrolysis",
-        "explanation": (
-            "CTX-M-15 is an extended-spectrum beta-lactamase associated with "
-            "resistance to third-generation cephalosporins such as cefotaxime."
-        ),
         "evidence_source": "local curated AMR target knowledge base",
+        "search_text": (
+            "Disease context: extended-spectrum beta-lactam resistant Escherichia coli infection. "
+            "Pathogen: Escherichia coli. Resistance mechanism: extended-spectrum beta-lactam resistance. "
+            "Gene: blaCTX-M-15. Protein: CTX-M-15 beta-lactamase. "
+            "Target family: class A beta-lactamase. "
+            "Mechanism category: antibiotic hydrolysis. "
+            "This target is associated with cephalosporin resistance and cefotaxime resistance."
+        ),
     },
     {
+        "id": "meca_staph_methicillin",
+        "disease_context": "methicillin-resistant Staphylococcus aureus infection",
         "pathogen": "Staphylococcus aureus",
-        "antibiotic": "methicillin",
         "resistance_mechanism": "methicillin resistance",
         "gene": "mecA",
-        "resolved_target_name": "Penicillin-binding protein 2a",
-        "target_type": "altered antibiotic target protein",
+        "protein": "Penicillin-binding protein 2a",
         "target_family": "penicillin-binding protein",
         "mechanism_category": "target modification",
-        "explanation": (
-            "The mecA gene encodes penicillin-binding protein 2a, which has "
-            "reduced affinity for beta-lactam antibiotics and is associated "
-            "with methicillin-resistant Staphylococcus aureus."
-        ),
         "evidence_source": "local curated AMR target knowledge base",
+        "search_text": (
+            "Disease context: methicillin-resistant Staphylococcus aureus infection. "
+            "Pathogen: Staphylococcus aureus. Resistance mechanism: methicillin resistance. "
+            "Gene: mecA. Protein: Penicillin-binding protein 2a. "
+            "Target family: penicillin-binding protein. "
+            "Mechanism category: target modification. "
+            "This target is associated with MRSA and reduced beta-lactam binding."
+        ),
     },
     {
+        "id": "rpob_mtb_rifampicin",
+        "disease_context": "rifampicin-resistant tuberculosis",
         "pathogen": "Mycobacterium tuberculosis",
-        "antibiotic": "rifampicin",
         "resistance_mechanism": "rifampicin resistance",
         "gene": "rpoB",
-        "resolved_target_name": "RNA polymerase beta subunit",
-        "target_type": "mutated antibiotic target protein",
+        "protein": "RNA polymerase beta subunit",
         "target_family": "RNA polymerase",
         "mechanism_category": "target alteration",
-        "explanation": (
-            "Rifampicin resistance in Mycobacterium tuberculosis is commonly "
-            "associated with mutations in rpoB, which encodes the beta subunit "
-            "of RNA polymerase, the drug target of rifampicin."
-        ),
         "evidence_source": "local curated AMR target knowledge base",
+        "search_text": (
+            "Disease context: rifampicin-resistant tuberculosis. "
+            "Pathogen: Mycobacterium tuberculosis. Resistance mechanism: rifampicin resistance. "
+            "Gene: rpoB. Protein: RNA polymerase beta subunit. "
+            "Target family: RNA polymerase. "
+            "Mechanism category: target alteration. "
+            "This target is associated with rifampicin resistance in tuberculosis."
+        ),
     },
 ]

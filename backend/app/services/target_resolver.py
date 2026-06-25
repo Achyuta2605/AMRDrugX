@@ -1,85 +1,110 @@
-from app.data.target_knowledge_base import TARGET_KNOWLEDGE_BASE
 from app.schemas.target import TargetResolveRequest, TargetResolveResponse
-
+from app.services.embedding_service import gemini_embeddings_available
+from app.services.semantic_target_retriever import (
+    keyword_retrieve_targets,
+    semantic_retrieve_targets,
+)
 
 SAFETY_NOTE = (
-    "Computational prediction only. Not medical advice. "
-    "Requires wet-lab validation."
+    "Computational target prioritization only. Not medical advice. "
+    "Requires database verification and experimental validation."
 )
 
 
-def normalize_text(value: str) -> str:
-    return value.strip().lower()
-
-
-def is_matching_record(
+def build_empty_response(
     request: TargetResolveRequest,
-    record: dict[str, str],
-) -> bool:
-    return (
-        normalize_text(request.pathogen) == normalize_text(record["pathogen"])
-        and normalize_text(request.antibiotic) == normalize_text(record["antibiotic"])
-        and normalize_text(request.resistance_mechanism)
-        == normalize_text(record["resistance_mechanism"])
-    )
-
-
-def build_known_target_response(
-    request: TargetResolveRequest,
-    record: dict[str, str],
+    retrieval_mode: str,
+    explanation: str,
 ) -> TargetResolveResponse:
     return TargetResolveResponse(
+        disease=request.disease,
         pathogen=request.pathogen,
-        antibiotic=request.antibiotic,
         resistance_mechanism=request.resistance_mechanism,
-        gene=record["gene"],
-        resolved_target_name=record["resolved_target_name"],
-        target_type=record["target_type"],
-        target_family=record["target_family"],
-        mechanism_category=record["mechanism_category"],
-        organism=record["pathogen"],
-        confidence="local-kb-match",
-        evidence_source=record["evidence_source"],
-        explanation=record["explanation"],
-        next_pipeline_step=(
-            "Use the resolved resistance target to retrieve candidate inhibitor "
-            "molecules in the next pipeline stage."
-        ),
-        safety_note=SAFETY_NOTE,
-    )
-
-
-def build_unknown_target_response(
-    request: TargetResolveRequest,
-) -> TargetResolveResponse:
-    return TargetResolveResponse(
-        pathogen=request.pathogen,
-        antibiotic=request.antibiotic,
-        resistance_mechanism=request.resistance_mechanism,
-        gene="unknown",
-        resolved_target_name="unknown",
-        target_type="unknown",
-        target_family="unknown",
-        mechanism_category="unknown",
-        organism=request.pathogen,
-        confidence="none",
-        evidence_source="local curated AMR target knowledge base",
-        explanation=(
-            "No deterministic local knowledge base match was found for this input. "
-            "Future versions will query curated AMR databases and protein resources "
-            "such as CARD, UniProt, PDB, and AlphaFold."
-        ),
-        next_pipeline_step=(
-            "Do not run molecule screening until a resistance target is resolved "
-            "with sufficient evidence."
-        ),
+        retrieval_mode=retrieval_mode,
+        resolved_targets=[],
+        explanation=explanation,
         safety_note=SAFETY_NOTE,
     )
 
 
 def resolve_target(request: TargetResolveRequest) -> TargetResolveResponse:
-    for record in TARGET_KNOWLEDGE_BASE:
-        if is_matching_record(request, record):
-            return build_known_target_response(request, record)
+    if gemini_embeddings_available():
+        try:
+            semantic_targets = semantic_retrieve_targets(request, top_k=3)
 
-    return build_unknown_target_response(request)
+            if semantic_targets:
+                return TargetResolveResponse(
+                    disease=request.disease,
+                    pathogen=request.pathogen,
+                    resistance_mechanism=request.resistance_mechanism,
+                    retrieval_mode="semantic_embedding",
+                    resolved_targets=semantic_targets,
+                    explanation=(
+                        "Targets were ranked using Gemini text embeddings over "
+                        "local AMR target records and cosine similarity. These "
+                        "results still require external database verification."
+                    ),
+                    safety_note=SAFETY_NOTE,
+                )
+
+            return build_empty_response(
+                request=request,
+                retrieval_mode="semantic_embedding",
+                explanation=(
+                    "Gemini embedding retrieval ran successfully, but no strong "
+                    "local AMR target match was found. Do not continue to molecule "
+                    "screening until the target is verified."
+                ),
+            )
+
+        except RuntimeError:
+            keyword_targets = keyword_retrieve_targets(request, top_k=3)
+
+            if keyword_targets:
+                return TargetResolveResponse(
+                    disease=request.disease,
+                    pathogen=request.pathogen,
+                    resistance_mechanism=request.resistance_mechanism,
+                    retrieval_mode="keyword_fallback_after_embedding_failure",
+                    resolved_targets=keyword_targets,
+                    explanation=(
+                        "Gemini embedding retrieval failed, so the resolver used "
+                        "deterministic keyword fallback over the local AMR target "
+                        "knowledge base."
+                    ),
+                    safety_note=SAFETY_NOTE,
+                )
+
+            return build_empty_response(
+                request=request,
+                retrieval_mode="keyword_fallback_after_embedding_failure",
+                explanation=(
+                    "Gemini embedding retrieval failed and deterministic keyword "
+                    "fallback found no strong local AMR target match."
+                ),
+            )
+
+    keyword_targets = keyword_retrieve_targets(request, top_k=3)
+
+    if keyword_targets:
+        return TargetResolveResponse(
+            disease=request.disease,
+            pathogen=request.pathogen,
+            resistance_mechanism=request.resistance_mechanism,
+            retrieval_mode="keyword_fallback_no_gemini_key",
+            resolved_targets=keyword_targets,
+            explanation=(
+                "GEMINI_API_KEY is not set. The resolver used deterministic "
+                "keyword fallback over the local AMR target knowledge base."
+            ),
+            safety_note=SAFETY_NOTE,
+        )
+
+    return build_empty_response(
+        request=request,
+        retrieval_mode="keyword_fallback_no_gemini_key",
+        explanation=(
+            "GEMINI_API_KEY is not set and deterministic keyword fallback found "
+            "no strong local AMR target match."
+        ),
+    )
