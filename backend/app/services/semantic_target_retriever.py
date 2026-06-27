@@ -72,7 +72,25 @@ def build_candidate(
         ),
         needs_external_verification=True,
     )
+def has_supporting_keyword_evidence(
+    request: TargetResolveRequest,
+    record: dict[str, str],
+) -> bool:
+    pathogen_matches = normalize_text(request.pathogen) == normalize_text(
+        record["pathogen"]
+    )
+    mechanism_matches = normalize_text(
+        request.resistance_mechanism
+    ) == normalize_text(record["resistance_mechanism"])
 
+    query_tokens = tokenize(
+        f"{request.disease} {request.pathogen} {request.resistance_mechanism}"
+    )
+    record_tokens = tokenize(record["search_text"])
+
+    meaningful_overlap = len(query_tokens.intersection(record_tokens)) >= 2
+
+    return (pathogen_matches and mechanism_matches) or meaningful_overlap
 
 def semantic_retrieve_targets(
     request: TargetResolveRequest,
@@ -99,10 +117,10 @@ def semantic_retrieve_targets(
     scored_records.sort(key=lambda item: item[0], reverse=True)
 
     strong_matches = [
-        (score, record)
-        for score, record in scored_records
-        if score >= 0.45
-    ][:top_k]
+    (score, record)
+    for score, record in scored_records
+    if score >= 0.74 and has_supporting_keyword_evidence(request, record)
+][:top_k]
 
     return [
         build_candidate(
