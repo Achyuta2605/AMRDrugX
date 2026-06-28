@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 
-from app.api.routes import health, proteins, targets
+from app.api.routes import health, protein_structures, proteins, targets
 
 app = FastAPI(
     title="AMRDrugX API",
@@ -11,3 +11,4 @@ app = FastAPI(
 app.include_router(health.router)
 app.include_router(targets.router, prefix="/api")
 app.include_router(proteins.router, prefix="/api")
+app.include_router(protein_structures.router, prefix="/api")
