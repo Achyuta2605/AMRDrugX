@@ -34,6 +34,10 @@ class ScoredMoleculeCandidate(BaseModel):
 
 
 class VirtualScreeningResponse(BaseModel):
+    job_id: str
+    storage_backend: str
+    input_location: str
+    output_location: str
     target_protein: str
     gene: str
     organism: str
