@@ -33,3 +33,18 @@ AMRDRUGX_SCREENING_BUCKET
 JOB_ID
 INPUT_KEY
 OUTPUT_KEY
+
+## Day 9 AWS Baseline Test
+
+Day 9 prepares the AWS build-and-run path for the baseline DTI worker.
+
+This does not run DeepPurpose.
+This does not run PyTorch.
+This does not perform biological DTI inference.
+
+The current worker produces:
+
+```text
+model_backend: worker_baseline
+score_type: non_biological_worker_test_score
+model_name: aws_worker_placeholder_not_biological

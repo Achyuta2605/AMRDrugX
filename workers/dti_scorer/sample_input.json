@@ -1,0 +1,24 @@
+{
+  "job_id": "sample-worker-test-job",
+  "target_protein": "KPC beta-lactamase",
+  "gene": "blaKPC",
+  "organism": "Klebsiella pneumoniae",
+  "uniprot_accession": "Q9F663",
+  "protein_sequence": "MKKSLRQFTLMATATVTLLLGSVPLYAQTADVQQKLAELERQSGGRLGVALINTADNSQILYRADERFAMCSTSKVMAAAAVLKQSETQKQLLNQPVEIKPADLVNYNPIAEKHVNGTMTLAELSAAALQYSDNTAMNKLIAHLGGPDKVTAFARSLGDETFRLDRTEPTLNTAIPGDPRDTTSPRAMAQTLRNLTLGKALGDSQRAQLVTWMKGNTTGAASIQAGLPASWVVGDKTGSGDYGTTNDIAVIWPQGRAPLVLVTYFTQPQQNAESRRDVLASAARIIAEGL",
+  "candidates": [
+    {
+      "compound_name": "avibactam",
+      "canonical_smiles": "CC1(C)S[C@@H]2[C@H](NC(=O)C(N)C3=CC=CC=C3)C(=O)N2C1C(=O)O",
+      "source_database": "PubChem",
+      "source_id": "9835049",
+      "source_url": "https://pubchem.ncbi.nlm.nih.gov/compound/9835049"
+    },
+    {
+      "compound_name": "vaborbactam",
+      "canonical_smiles": "B1(OC(C(O1)(CCCCC)C(=O)O)C(=O)O)O",
+      "source_database": "PubChem",
+      "source_id": "56649450",
+      "source_url": "https://pubchem.ncbi.nlm.nih.gov/compound/56649450"
+    }
+  ]
+}

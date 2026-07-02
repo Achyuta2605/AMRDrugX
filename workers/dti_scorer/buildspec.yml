@@ -1,0 +1,30 @@
+version: 0.2
+
+phases:
+  pre_build:
+    commands:
+      - echo "Starting AMRDrugX DTI worker build"
+      - echo "AWS account: $AWS_ACCOUNT_ID"
+      - echo "AWS region: $AWS_DEFAULT_REGION"
+      - echo "Image repo: $IMAGE_REPO_NAME"
+      - IMAGE_TAG=${IMAGE_TAG:-latest}
+      - REPOSITORY_URI=$AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$IMAGE_REPO_NAME
+      - echo "Logging in to Amazon ECR"
+      - aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com
+
+  build:
+    commands:
+      - echo "Building Docker image"
+      - docker build -f workers/dti_scorer/Dockerfile -t $IMAGE_REPO_NAME:$IMAGE_TAG workers/dti_scorer
+      - docker tag $IMAGE_REPO_NAME:$IMAGE_TAG $REPOSITORY_URI:$IMAGE_TAG
+
+  post_build:
+    commands:
+      - echo "Pushing Docker image to ECR"
+      - docker push $REPOSITORY_URI:$IMAGE_TAG
+      - echo "Image pushed successfully"
+      - printf '{"imageUri":"%s"}' $REPOSITORY_URI:$IMAGE_TAG > imageDetail.json
+
+artifacts:
+  files:
+    - imageDetail.json
