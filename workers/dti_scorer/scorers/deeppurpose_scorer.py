@@ -1,5 +1,5 @@
 import os
-from typing import Any
+from typing import Any, Dict, List, Tuple
 
 MODEL_BACKEND = "deeppurpose"
 SCORE_TYPE = "ai_dti_prediction_score"
@@ -12,7 +12,7 @@ SAFETY_NOTE = (
 )
 
 
-def get_model_reference() -> tuple[str, str]:
+def get_model_reference() -> Tuple[str, str]:
     model_path = os.getenv("DEEPPURPOSE_MODEL_PATH")
     model_name = os.getenv("DEEPPURPOSE_MODEL_NAME", DEFAULT_MODEL_NAME)
 
@@ -36,7 +36,7 @@ def get_model_encoding(model: Any, key: str, fallback: str) -> str:
     return fallback
 
 
-def load_deeppurpose_model() -> tuple[Any, str]:
+def load_deeppurpose_model() -> Tuple[Any, str]:
     try:
         from DeepPurpose import DTI as models
     except ImportError as exc:
@@ -62,7 +62,7 @@ def load_deeppurpose_model() -> tuple[Any, str]:
     return model, model_label
 
 
-def score(job_id: str, protein_sequence: str, candidates: list[dict[str, Any]]) -> dict[str, Any]:
+def score(job_id: str, protein_sequence: str, candidates: List[Dict[str, Any]]) -> Dict[str, Any]:
     try:
         from DeepPurpose import utils
     except ImportError as exc:

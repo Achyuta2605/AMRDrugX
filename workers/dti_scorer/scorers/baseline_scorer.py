@@ -1,5 +1,5 @@
 import hashlib
-from typing import Any
+from typing import Any, Dict, List
 
 MODEL_BACKEND = "worker_baseline"
 SCORE_TYPE = "non_biological_worker_test_score"
@@ -22,7 +22,7 @@ def baseline_score(protein_sequence: str, canonical_smiles: str) -> float:
     return round(raw_value / 0xFFFFFFFF, 4)
 
 
-def score(job_id: str, protein_sequence: str, candidates: list[dict[str, Any]]) -> dict[str, Any]:
+def score(job_id: str, protein_sequence: str, candidates: List[Dict[str, Any]]) -> Dict[str, Any]:
     scored = []
 
     for candidate in candidates:
