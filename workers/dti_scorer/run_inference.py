@@ -1,4 +1,3 @@
-import hashlib
 import json
 import os
 import sys
@@ -6,16 +5,7 @@ from typing import Any
 
 import boto3
 
-
-MODEL_BACKEND = "worker_baseline"
-SCORE_TYPE = "non_biological_worker_test_score"
-MODEL_NAME = "aws_worker_placeholder_not_biological"
-
-SAFETY_NOTE = (
-    "Worker scores are non-biological test scores only. They are not evidence "
-    "of efficacy, binding, inhibition, or safety. Real DTI modeling, docking, "
-    "ADMET analysis, literature review, and experimental validation are required."
-)
+from scorers import baseline_scorer, deeppurpose_scorer
 
 
 def get_required_env(name: str) -> str:
@@ -29,21 +19,13 @@ def get_required_env(name: str) -> str:
 
 def read_json_from_s3(client: Any, bucket: str, key: str) -> dict[str, Any]:
     print(f"Reading input from s3://{bucket}/{key}")
-
     response = client.get_object(Bucket=bucket, Key=key)
     body = response["Body"].read().decode("utf-8")
-
     return json.loads(body)
 
 
-def write_json_to_s3(
-    client: Any,
-    bucket: str,
-    key: str,
-    payload: dict[str, Any],
-) -> None:
+def write_json_to_s3(client: Any, bucket: str, key: str, payload: dict[str, Any]) -> None:
     print(f"Writing output to s3://{bucket}/{key}")
-
     client.put_object(
         Bucket=bucket,
         Key=key,
@@ -52,97 +34,23 @@ def write_json_to_s3(
     )
 
 
-def is_valid_smiles(smiles: str) -> bool:
-    return bool(smiles and smiles.strip())
+def run_scorer(
+    backend: str,
+    job_id: str,
+    protein_sequence: str,
+    candidates: list[dict[str, Any]],
+) -> dict[str, Any]:
+    if backend == "baseline":
+        print("Using baseline scorer")
+        return baseline_scorer.score(job_id, protein_sequence, candidates)
 
+    if backend == "deeppurpose":
+        print("Using DeepPurpose scorer")
+        return deeppurpose_scorer.score(job_id, protein_sequence, candidates)
 
-def baseline_score(protein_sequence: str, canonical_smiles: str) -> float:
-    score_seed = f"{protein_sequence}|{canonical_smiles}"
-    digest = hashlib.sha256(score_seed.encode("utf-8")).hexdigest()
-
-    raw_value = int(digest[:8], 16)
-    normalized_score = raw_value / 0xFFFFFFFF
-
-    return round(normalized_score, 4)
-
-
-def score_candidates(input_payload: dict[str, Any]) -> list[dict[str, Any]]:
-    protein_sequence = input_payload.get("protein_sequence", "")
-    candidates = input_payload.get("candidates", [])
-
-    scored_candidates = []
-
-    for candidate in candidates:
-        smiles = candidate.get("canonical_smiles", "")
-
-        if not is_valid_smiles(smiles):
-            score = 0.0
-            screening_note = (
-                "Invalid or empty SMILES. Worker baseline score set to 0. "
-                "This is not a biological prediction."
-            )
-        else:
-            score = baseline_score(
-                protein_sequence=protein_sequence,
-                canonical_smiles=smiles,
-            )
-            screening_note = (
-                "Worker baseline score for infrastructure testing only. "
-                "This is not a biological DTI prediction."
-            )
-
-        scored_candidates.append(
-            {
-                "rank": 0,
-                "compound_name": candidate.get("compound_name", "unknown"),
-                "canonical_smiles": smiles,
-                "source_database": candidate.get("source_database", "unknown"),
-                "source_id": candidate.get("source_id", "unknown"),
-                "source_url": candidate.get("source_url", "unknown"),
-                "dti_score": score,
-                "score_type": SCORE_TYPE,
-                "model_name": MODEL_NAME,
-                "screening_note": screening_note,
-                "needs_docking_validation": True,
-                "needs_admet_validation": True,
-            }
-        )
-
-    ranked_candidates = sorted(
-        scored_candidates,
-        key=lambda item: item["dti_score"],
-        reverse=True,
+    raise RuntimeError(
+        "Invalid DTI_SCORER_BACKEND. Expected 'baseline' or 'deeppurpose'."
     )
-
-    for index, candidate in enumerate(ranked_candidates, start=1):
-        candidate["rank"] = index
-
-    return ranked_candidates
-
-
-def build_output_payload(input_payload: dict[str, Any]) -> dict[str, Any]:
-    job_id = input_payload.get("job_id", os.getenv("JOB_ID", "unknown"))
-    protein_sequence = input_payload.get("protein_sequence", "")
-    candidates = input_payload.get("candidates", [])
-
-    if not protein_sequence.strip():
-        status = "failed_validation_missing_protein_sequence"
-        ranked_candidates = []
-    elif not candidates:
-        status = "failed_validation_no_candidates"
-        ranked_candidates = []
-    else:
-        status = "completed"
-        ranked_candidates = score_candidates(input_payload)
-
-    return {
-        "job_id": job_id,
-        "status": status,
-        "model_backend": MODEL_BACKEND,
-        "score_type": SCORE_TYPE,
-        "ranked_candidates": ranked_candidates,
-        "safety_note": SAFETY_NOTE,
-    }
 
 
 def main() -> int:
@@ -152,6 +60,7 @@ def main() -> int:
         job_id = get_required_env("JOB_ID")
         input_key = get_required_env("INPUT_KEY")
         output_key = get_required_env("OUTPUT_KEY")
+        scorer_backend = os.getenv("DTI_SCORER_BACKEND", "baseline").strip().lower()
 
         print("Starting AMRDrugX DTI worker")
         print(f"Job ID: {job_id}")
@@ -159,26 +68,23 @@ def main() -> int:
         print(f"Bucket: {bucket}")
         print(f"Input key: {input_key}")
         print(f"Output key: {output_key}")
+        print(f"DTI scorer backend: {scorer_backend}")
 
         client = boto3.client("s3", region_name=aws_region)
 
-        input_payload = read_json_from_s3(
-            client=client,
-            bucket=bucket,
-            key=input_key,
+        input_payload = read_json_from_s3(client, bucket, input_key)
+
+        protein_sequence = input_payload.get("protein_sequence", "")
+        candidates = input_payload.get("candidates", [])
+
+        output_payload = run_scorer(
+            backend=scorer_backend,
+            job_id=input_payload.get("job_id", job_id),
+            protein_sequence=protein_sequence,
+            candidates=candidates,
         )
 
-        if "job_id" not in input_payload:
-            input_payload["job_id"] = job_id
-
-        output_payload = build_output_payload(input_payload)
-
-        write_json_to_s3(
-            client=client,
-            bucket=bucket,
-            key=output_key,
-            payload=output_payload,
-        )
+        write_json_to_s3(client, bucket, output_key, output_payload)
 
         print(f"Worker completed with status: {output_payload['status']}")
         return 0

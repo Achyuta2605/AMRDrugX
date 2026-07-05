@@ -48,3 +48,11 @@ The current worker produces:
 model_backend: worker_baseline
 score_type: non_biological_worker_test_score
 model_name: aws_worker_placeholder_not_biological
+
+## DeepPurpose Backend
+
+The worker supports two backends:
+
+```text
+DTI_SCORER_BACKEND=baseline
+DTI_SCORER_BACKEND=deeppurpose
