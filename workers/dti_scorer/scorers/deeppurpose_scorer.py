@@ -3,6 +3,8 @@ from typing import Any
 
 MODEL_BACKEND = "deeppurpose"
 SCORE_TYPE = "ai_dti_prediction_score"
+DEFAULT_MODEL_NAME = "MPNN_CNN_DAVIS"
+
 SAFETY_NOTE = (
     "Research prototype only. Scores are computational predictions, not clinical "
     "or therapeutic claims. Docking, ADMET analysis, literature review, and "
@@ -10,16 +12,19 @@ SAFETY_NOTE = (
 )
 
 
-def get_model_path() -> str:
+def get_model_reference() -> tuple[str, str]:
     model_path = os.getenv("DEEPPURPOSE_MODEL_PATH")
+    model_name = os.getenv("DEEPPURPOSE_MODEL_NAME", DEFAULT_MODEL_NAME)
 
-    if not model_path:
-        raise RuntimeError(
-            "DTI_SCORER_BACKEND=deeppurpose requires DEEPPURPOSE_MODEL_PATH. "
-            "Provide a compatible pretrained DeepPurpose model directory."
-        )
+    if model_path:
+        return "path", model_path.strip()
 
-    return model_path
+    if model_name:
+        return "name", model_name.strip()
+
+    raise RuntimeError(
+        "DeepPurpose requires either DEEPPURPOSE_MODEL_PATH or DEEPPURPOSE_MODEL_NAME."
+    )
 
 
 def get_model_encoding(model: Any, key: str, fallback: str) -> str:
@@ -31,24 +36,42 @@ def get_model_encoding(model: Any, key: str, fallback: str) -> str:
     return fallback
 
 
-def score(job_id: str, protein_sequence: str, candidates: list[dict[str, Any]]) -> dict[str, Any]:
+def load_deeppurpose_model() -> tuple[Any, str]:
     try:
         from DeepPurpose import DTI as models
-        from DeepPurpose import utils
     except ImportError as exc:
         raise RuntimeError(
             "DeepPurpose is not installed in this worker image. "
             "Build with INSTALL_DEEPPURPOSE=true."
         ) from exc
 
-    model_path = get_model_path()
+    reference_type, reference_value = get_model_reference()
 
     try:
-        model = models.model_pretrained(path_dir=model_path)
+        if reference_type == "path":
+            model = models.model_pretrained(path_dir=reference_value)
+            model_label = f"DeepPurpose:path:{reference_value}"
+        else:
+            model = models.model_pretrained(model=reference_value)
+            model_label = f"DeepPurpose:model:{reference_value}"
     except Exception as exc:
         raise RuntimeError(
-            f"Failed to load DeepPurpose model from DEEPPURPOSE_MODEL_PATH={model_path}: {exc}"
+            f"Failed to load DeepPurpose pretrained model {reference_value}: {exc}"
         ) from exc
+
+    return model, model_label
+
+
+def score(job_id: str, protein_sequence: str, candidates: list[dict[str, Any]]) -> dict[str, Any]:
+    try:
+        from DeepPurpose import utils
+    except ImportError as exc:
+        raise RuntimeError(
+            "DeepPurpose utilities are not installed in this worker image."
+        ) from exc
+
+    if not protein_sequence.strip():
+        raise RuntimeError("protein_sequence is required for DeepPurpose scoring.")
 
     valid_candidates = [
         candidate
@@ -56,11 +79,10 @@ def score(job_id: str, protein_sequence: str, candidates: list[dict[str, Any]]) 
         if candidate.get("canonical_smiles", "").strip()
     ]
 
-    if not protein_sequence.strip():
-        raise RuntimeError("protein_sequence is required for DeepPurpose scoring.")
-
     if not valid_candidates:
         raise RuntimeError("At least one valid candidate SMILES is required for DeepPurpose scoring.")
+
+    model, model_label = load_deeppurpose_model()
 
     drug_smiles = [candidate["canonical_smiles"] for candidate in valid_candidates]
     target_sequences = [protein_sequence for _ in valid_candidates]
@@ -95,7 +117,7 @@ def score(job_id: str, protein_sequence: str, candidates: list[dict[str, Any]]) 
                 "source_url": candidate.get("source_url", "unknown"),
                 "dti_score": round(float(prediction), 4),
                 "score_type": SCORE_TYPE,
-                "model_name": f"DeepPurpose:{model_path}",
+                "model_name": model_label,
                 "screening_note": (
                     "DeepPurpose DTI prediction score. Computational research estimate only."
                 ),
@@ -114,7 +136,7 @@ def score(job_id: str, protein_sequence: str, candidates: list[dict[str, Any]]) 
         "status": "completed",
         "model_backend": MODEL_BACKEND,
         "score_type": SCORE_TYPE,
-        "model_name": f"DeepPurpose:{model_path}",
+        "model_name": model_label,
         "ranked_candidates": ranked,
         "safety_note": SAFETY_NOTE,
     }
