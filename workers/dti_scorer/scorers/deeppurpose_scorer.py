@@ -41,8 +41,7 @@ def load_deeppurpose_model() -> Tuple[Any, str]:
         from DeepPurpose import DTI as models
     except ImportError as exc:
         raise RuntimeError(
-            "DeepPurpose is not installed in this worker image. "
-            "Build with INSTALL_DEEPPURPOSE=true."
+            f"DeepPurpose DTI import failed: {exc}"
         ) from exc
 
     reference_type, reference_value = get_model_reference()
@@ -71,7 +70,7 @@ def score(
         from DeepPurpose import utils
     except ImportError as exc:
         raise RuntimeError(
-            "DeepPurpose utilities are not installed in this worker image."
+            f"DeepPurpose utilities import failed: {exc}"
         ) from exc
 
     if not protein_sequence.strip():
