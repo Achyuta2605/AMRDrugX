@@ -1,4 +1,5 @@
 numpy<2
 pandas
 scikit-learn
+rdkit-pypi
 DeepPurpose
