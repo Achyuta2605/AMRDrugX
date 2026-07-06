@@ -62,7 +62,11 @@ def load_deeppurpose_model() -> Tuple[Any, str]:
     return model, model_label
 
 
-def score(job_id: str, protein_sequence: str, candidates: List[Dict[str, Any]]) -> Dict[str, Any]:
+def score(
+    job_id: str,
+    protein_sequence: str,
+    candidates: List[Dict[str, Any]],
+) -> Dict[str, Any]:
     try:
         from DeepPurpose import utils
     except ImportError as exc:

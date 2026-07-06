@@ -1,7 +1,7 @@
 import json
 import os
 import sys
-from typing import Any
+from typing import Any, Dict
 
 import boto3
 
@@ -17,14 +17,19 @@ def get_required_env(name: str) -> str:
     return value
 
 
-def read_json_from_s3(client: Any, bucket: str, key: str) -> dict[str, Any]:
+def read_json_from_s3(client: Any, bucket: str, key: str) -> Dict[str, Any]:
     print(f"Reading input from s3://{bucket}/{key}")
     response = client.get_object(Bucket=bucket, Key=key)
     body = response["Body"].read().decode("utf-8")
     return json.loads(body)
 
 
-def write_json_to_s3(client: Any, bucket: str, key: str, payload: dict[str, Any]) -> None:
+def write_json_to_s3(
+    client: Any,
+    bucket: str,
+    key: str,
+    payload: Dict[str, Any],
+) -> None:
     print(f"Writing output to s3://{bucket}/{key}")
     client.put_object(
         Bucket=bucket,
@@ -38,8 +43,8 @@ def run_scorer(
     backend: str,
     job_id: str,
     protein_sequence: str,
-    candidates: list[dict[str, Any]],
-) -> dict[str, Any]:
+    candidates: list,
+) -> Dict[str, Any]:
     if backend == "baseline":
         print("Using baseline scorer")
         return baseline_scorer.score(job_id, protein_sequence, candidates)
