@@ -1,6 +1,9 @@
+import os
+from app.services.ecs_task_service import start_dti_fargate_task
 from uuid import uuid4
 
 from app.schemas.molecule_screening import (
+    ScreeningJobResultResponse,
     VirtualScreeningRequest,
     VirtualScreeningResponse,
 )
@@ -77,6 +80,41 @@ def run_virtual_screening(
         output_location = store.save_output(job_id, response.model_dump())
         response.output_location = output_location
         return response
+    execution_mode = os.getenv("SCREENING_EXECUTION_MODE", "local").lower()
+
+    if execution_mode == "fargate":
+        input_key = f"screening_jobs/{job_id}/input.json"
+        output_key = f"screening_jobs/{job_id}/output.json"
+        output_location = input_location.replace("/input.json", "/output.json")
+
+        ecs_task = start_dti_fargate_task(
+            job_id=job_id,
+            input_key=input_key,
+            output_key=output_key,
+        )
+
+        return VirtualScreeningResponse(
+            job_id=job_id,
+            status="submitted",
+            execution_mode="fargate",
+            storage_backend=store.backend_name,
+            input_location=input_location,
+            output_location=output_location,
+            task_arn=ecs_task["task_arn"],
+            target_protein=request.target_protein,
+            gene=request.gene,
+            organism=request.organism,
+            uniprot_accession=request.uniprot_accession,
+            total_candidates_screened=len(request.candidates),
+            ranked_candidates=[],
+            model_backend="deeppurpose_fargate",
+            next_pipeline_step="poll_screening_result",
+            safety_note=(
+                "AI screening job submitted to AWS Fargate. Results are computational "
+                "research predictions only and require docking, ADMET analysis, literature "
+                "review, and experimental validation."
+            ),
+        )
 
     scored_candidates, model_backend = score_molecules_against_target(
         protein_sequence=request.protein_sequence,
@@ -112,3 +150,41 @@ def run_virtual_screening(
     response.output_location = output_location
 
     return response
+
+
+def get_screening_job_result(job_id: str) -> ScreeningJobResultResponse:
+    store = get_screening_job_store()
+    output_key = f"screening_jobs/{job_id}/output.json"
+    if store.backend_name == "s3":
+        bucket_name = os.getenv("AMRDRUGX_SCREENING_BUCKET", "")
+        output_location = f"s3://{bucket_name}/{output_key}"
+    else:
+        output_location = output_key
+
+    if not store.output_exists(job_id):
+        return ScreeningJobResultResponse(
+            job_id=job_id,
+            status="not_ready",
+            storage_backend=store.backend_name,
+            output_location=output_location,
+            output=None,
+            safety_note=(
+                "Screening job has been submitted, but no output is available yet. "
+                "Results are computational research predictions only and require validation."
+            ),
+        )
+
+    output_payload = store.get_output(job_id)
+
+    return ScreeningJobResultResponse(
+        job_id=job_id,
+        status="completed",
+        storage_backend=store.backend_name,
+        output_location=output_location,
+        output=output_payload,
+        safety_note=(
+            "Screening results are computational predictions only. They are not clinical "
+            "or therapeutic claims. Docking, ADMET analysis, literature review, and "
+            "experimental validation are required."
+        ),
+    )

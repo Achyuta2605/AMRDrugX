@@ -1,5 +1,6 @@
 from pydantic import BaseModel, Field
-
+from typing import List, Optional
+from typing import Any, Dict, List, Optional
 
 class MoleculeCandidate(BaseModel):
     compound_name: str = Field(..., examples=["avibactam"])
@@ -46,4 +47,16 @@ class VirtualScreeningResponse(BaseModel):
     ranked_candidates: list[ScoredMoleculeCandidate]
     model_backend: str
     next_pipeline_step: str
+    safety_note: str
+    status: str = "completed"
+    execution_mode: str = "local"
+    task_arn: Optional[str] = None
+
+
+class ScreeningJobResultResponse(BaseModel):
+    job_id: str
+    status: str
+    storage_backend: str
+    output_location: str
+    output: Optional[Dict[str, Any]] = None
     safety_note: str
