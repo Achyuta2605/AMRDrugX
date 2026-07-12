@@ -1,11 +1,12 @@
 import json
 import os
 import sys
-from typing import Any, Dict
+from typing import Any, Dict, List
 
 import boto3
 
 from scorers import baseline_scorer, deeppurpose_scorer
+from scorers.evaluation import evaluate_ranked_candidates
 
 
 def get_required_env(name: str) -> str:
@@ -43,7 +44,7 @@ def run_scorer(
     backend: str,
     job_id: str,
     protein_sequence: str,
-    candidates: list,
+    candidates: List[Dict[str, Any]],
 ) -> Dict[str, Any]:
     if backend == "baseline":
         print("Using baseline scorer")
@@ -88,6 +89,18 @@ def main() -> int:
             protein_sequence=protein_sequence,
             candidates=candidates,
         )
+
+        has_ground_truth_labels = any(
+            candidate.get("ground_truth_interaction")
+            for candidate in candidates
+        )
+
+        if has_ground_truth_labels:
+            print("Detected ground truth labels. Adding evaluation metrics.")
+            output_payload["evaluation"] = evaluate_ranked_candidates(
+                ranked_candidates=output_payload.get("ranked_candidates", []),
+                original_candidates=candidates,
+            )
 
         write_json_to_s3(client, bucket, output_key, output_payload)
 

@@ -1,0 +1,63 @@
+{
+  "job_id": "sample-labeled-kpc2-eval-job",
+  "dataset_name": "KPC-2 beta-lactamase labeled sanity-check set",
+  "dataset_notes": "Small manually labeled sanity-check dataset for AMRDrugX evaluation plumbing. This is not a full benchmark, not a clinical dataset, and not sufficient for ROC-AUC or PR-AUC.",
+  "target_protein": "KPC-2 beta-lactamase",
+  "gene": "blaKPC-2",
+  "organism": "Klebsiella pneumoniae",
+  "uniprot_accession": "Q9F663",
+  "protein_sequence": "MSLYRRLVLLSCLSWPLAGFSATAQADTEQQKQQQIDLHDDTLAKNKDYPAQYKYQNDYGKEKAHQGKIGYVGTKSGEPLTGNKYGSTRTYAYASGQPVKGTKTGTVTAASQPDWNNQTVTYQWNKADKPSRNLTNGDVGWVHIGDYQPGSSFDVSKLAGLEREYGFQDNQKKESRKWLEQKLNQKQGQIKVLNANQKQ",
+  "candidates": [
+    {
+      "compound_name": "avibactam",
+      "canonical_smiles": "CC1(C)S[C@@H]2[C@H](NC(=O)C(N)C3=CC=CC=C3)C(=O)N2C1C(=O)O",
+      "source_database": "PubChem",
+      "source_id": "9835049",
+      "source_url": "https://pubchem.ncbi.nlm.nih.gov/compound/9835049",
+      "ground_truth_interaction": "positive",
+      "label_source": "known beta-lactamase inhibitor sanity-check label",
+      "control_type": "expected_positive"
+    },
+    {
+      "compound_name": "vaborbactam",
+      "canonical_smiles": "B1(OC(C(O1)(CCCCC)C(=O)O)C(=O)O)O",
+      "source_database": "PubChem",
+      "source_id": "56649450",
+      "source_url": "https://pubchem.ncbi.nlm.nih.gov/compound/56649450",
+      "ground_truth_interaction": "positive",
+      "label_source": "known beta-lactamase inhibitor sanity-check label",
+      "control_type": "expected_positive"
+    },
+    {
+      "compound_name": "aspirin",
+      "canonical_smiles": "CC(=O)OC1=CC=CC=C1C(=O)O",
+      "source_database": "PubChem",
+      "source_id": "2244",
+      "source_url": "https://pubchem.ncbi.nlm.nih.gov/compound/2244",
+      "ground_truth_interaction": "negative",
+      "label_source": "non-AMR control molecule sanity-check label",
+      "control_type": "negative_control"
+    },
+    {
+      "compound_name": "caffeine",
+      "canonical_smiles": "CN1C=NC2=C1C(=O)N(C(=O)N2C)C",
+      "source_database": "PubChem",
+      "source_id": "2519",
+      "source_url": "https://pubchem.ncbi.nlm.nih.gov/compound/2519",
+      "ground_truth_interaction": "negative",
+      "label_source": "non-AMR control molecule sanity-check label",
+      "control_type": "negative_control"
+    },
+    {
+      "compound_name": "paracetamol",
+      "canonical_smiles": "CC(=O)NC1=CC=C(C=C1)O",
+      "source_database": "PubChem",
+      "source_id": "1983",
+      "source_url": "https://pubchem.ncbi.nlm.nih.gov/compound/1983",
+      "ground_truth_interaction": "negative",
+      "label_source": "non-AMR control molecule sanity-check label",
+      "control_type": "negative_control"
+    }
+  ],
+  "safety_note": "This labeled input is for computational pipeline sanity-checking only. It is not medical advice, not a therapeutic claim, and not a full validation dataset."
+}
