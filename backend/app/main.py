@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 
 from app.api.routes import (
+    candidate_retrieval,
     health,
     molecule_screening,
     protein_structures,
@@ -19,3 +20,4 @@ app.include_router(targets.router, prefix="/api")
 app.include_router(proteins.router, prefix="/api")
 app.include_router(protein_structures.router, prefix="/api")
 app.include_router(molecule_screening.router, prefix="/api")
+app.include_router(candidate_retrieval.router)
