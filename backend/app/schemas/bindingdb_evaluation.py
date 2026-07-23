@@ -29,13 +29,16 @@ class BindingDBCandidate(BaseModel):
 class BindingDBEvaluationSummary(BaseModel):
     bindingdb_records_found: int
     valid_records_used: int
+    unique_molecules_used: int
     affinity_types_used: List[str]
     ground_truth_ranking: List[Dict[str, Any]]
     deeppurpose_ranking: Optional[List[Dict[str, Any]]] = None
     strongest_ground_truth_candidate: Optional[Dict[str, Any]] = None
     rank_of_strongest_candidate_in_deeppurpose: Optional[int] = None
+    ranking_agreement: Optional[str] = None
     spearman_rank_correlation: Optional[float] = None
     evaluation_note: str
+    limitation_note: str
     # debug_first_raw_record_keys: Optional[List[str]] = None
     # debug_first_raw_record: Optional[Dict[str, Any]] = None
 

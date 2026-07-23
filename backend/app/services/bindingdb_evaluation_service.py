@@ -21,6 +21,11 @@ EVALUATION_NOTE = (
     "treated as model validation."
 )
 
+LIMITATION_NOTE = (
+    "Tiny BindingDB sanity-check only. The number of molecules may be very small, "
+    "so this should not be interpreted as a full benchmark or model validation."
+)
+
 
 def _make_ground_truth_ranking(
     candidates: List[BindingDBCandidate],
@@ -193,12 +198,28 @@ def compare_bindingdb_with_deeppurpose_output(
     strongest_candidate = bindingdb_response.summary.strongest_ground_truth_candidate
 
     bindingdb_response.summary.deeppurpose_ranking = deeppurpose_ranking
-    bindingdb_response.summary.rank_of_strongest_candidate_in_deeppurpose = (
-        _find_rank_of_strongest_candidate(
-            strongest_ground_truth_candidate=strongest_candidate,
-            deeppurpose_ranking=deeppurpose_ranking,
-        )
+    rank_of_strongest = _find_rank_of_strongest_candidate(
+        strongest_ground_truth_candidate=strongest_candidate,
+        deeppurpose_ranking=deeppurpose_ranking,
     )
+
+    bindingdb_response.summary.rank_of_strongest_candidate_in_deeppurpose = (
+        rank_of_strongest
+    )
+
+    if rank_of_strongest == 1:
+        bindingdb_response.summary.ranking_agreement = (
+            "strongest_bindingdb_candidate_ranked_first_by_deeppurpose"
+        )
+    elif rank_of_strongest is None:
+        bindingdb_response.summary.ranking_agreement = (
+            "strongest_bindingdb_candidate_not_found_in_deeppurpose_output"
+        )
+    else:
+        bindingdb_response.summary.ranking_agreement = (
+            "strongest_bindingdb_candidate_not_ranked_first_by_deeppurpose"
+        )
+
     bindingdb_response.summary.spearman_rank_correlation = (
         _spearman_rank_correlation(
             ground_truth_ranking=ground_truth_ranking,
@@ -239,6 +260,7 @@ def prepare_bindingdb_evaluation(
     summary = BindingDBEvaluationSummary(
         bindingdb_records_found=bindingdb_result.get("raw_records_found", 0),
         valid_records_used=len(candidates),
+        unique_molecules_used=len(candidates),
         affinity_types_used=bindingdb_result.get("affinity_types_used", []),
         ground_truth_ranking=ground_truth_ranking,
         deeppurpose_ranking=None,
@@ -246,12 +268,10 @@ def prepare_bindingdb_evaluation(
             ground_truth_ranking
         ),
         rank_of_strongest_candidate_in_deeppurpose=None,
+        ranking_agreement=None,
         spearman_rank_correlation=None,
         evaluation_note=EVALUATION_NOTE,
-        # debug_first_raw_record_keys=bindingdb_result.get(
-        #     "debug_first_raw_record_keys"
-        # ),
-        # debug_first_raw_record=bindingdb_result.get("debug_first_raw_record"),
+        limitation_note=LIMITATION_NOTE,
     )
 
     screening_input_preview = _build_screening_input_from_bindingdb_candidates(
