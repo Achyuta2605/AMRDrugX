@@ -32,3 +32,4 @@ data/cache/
 data/processed/
 data/structures/
 data/docking/
+backend/app/data/screening_jobs/
