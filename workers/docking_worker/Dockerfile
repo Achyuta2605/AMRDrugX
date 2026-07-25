@@ -8,7 +8,7 @@ RUN apt-get update && \
 
 COPY requirements.txt .
 
-RUN python3 -m pip install --no-cache-dir -r requirements.txt
+RUN python3 -m pip install --no-cache-dir --break-system-packages -r requirements.txt
 
 COPY run_docking.py .
 
