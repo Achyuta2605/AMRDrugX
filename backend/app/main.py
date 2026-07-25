@@ -3,6 +3,7 @@ from fastapi import FastAPI
 from app.api.routes import (
     bindingdb_evaluation,
     candidate_retrieval,
+    docking_routes,
     health,
     molecule_screening,
     protein_structures,
@@ -23,3 +24,4 @@ app.include_router(protein_structures.router, prefix="/api")
 app.include_router(molecule_screening.router, prefix="/api")
 app.include_router(candidate_retrieval.router)
 app.include_router(bindingdb_evaluation.router)
+app.include_router(docking_routes.router)

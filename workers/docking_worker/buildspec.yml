@@ -1,0 +1,22 @@
+version: 0.2
+
+env:
+  variables:
+    IMAGE_TAG: latest
+
+phases:
+  pre_build:
+    commands:
+      - echo Logging in to Amazon ECR
+      - aws ecr get-login-password --region "$AWS_DEFAULT_REGION" | docker login --username AWS --password-stdin "$AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com"
+      - IMAGE_URI="$AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$IMAGE_REPO_NAME:$IMAGE_TAG"
+      - echo "Image URI is $IMAGE_URI"
+  build:
+    commands:
+      - echo Building AMRDrugX GNINA docking worker image
+      - docker build -f workers/docking_worker/Dockerfile -t "$IMAGE_URI" workers/docking_worker
+  post_build:
+    commands:
+      - echo Pushing AMRDrugX GNINA docking worker image
+      - docker push "$IMAGE_URI"
+      - echo Build completed
