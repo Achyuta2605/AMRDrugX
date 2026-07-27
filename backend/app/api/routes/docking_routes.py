@@ -43,8 +43,8 @@ def submit_docking_job(request: DockingJobRequest) -> DockingJobSubmitResponse:
 
     input_payload = request.model_dump()
     input_payload["job_id"] = job_id
-    input_payload["docking_backend"] = "gnina"
-    input_payload["docked_pose_sdf_s3_key"] = build_docked_pose_key(job_id)
+    input_payload["docking_backend"] = "autodock_vina"
+    input_payload["docked_pose_s3_key"] = f"docking_jobs/{job_id}/output/docked_pose.pdbqt"
 
     save_docking_input(job_id=job_id, payload=input_payload)
 
@@ -57,7 +57,7 @@ def submit_docking_job(request: DockingJobRequest) -> DockingJobSubmitResponse:
     return DockingJobSubmitResponse(
         job_id=job_id,
         status="submitted",
-        docking_backend="gnina",
+        docking_backend="autodock_vina",
         input_s3_key=input_key,
         output_s3_key=output_key,
         task_arn=task["task_arn"],
@@ -89,12 +89,17 @@ def get_docking_job_result(job_id: str) -> DockingJobResultResponse:
         bindingdb_monomer_id=output_payload.get("bindingdb_monomer_id"),
         docking_backend=output_payload["docking_backend"],
         docking_status=output_payload["docking_status"],
+        best_affinity_kcal_mol=output_payload.get("best_affinity_kcal_mol"),
         docking_score=output_payload.get("docking_score"),
         cnn_score=output_payload.get("cnn_score"),
         cnn_affinity=output_payload.get("cnn_affinity"),
         receptor_pdb_s3_key=output_payload["receptor_pdb_s3_key"],
-        ligand_sdf_s3_key=output_payload["ligand_sdf_s3_key"],
+        ligand_sdf_s3_key=output_payload.get(
+            "ligand_sdf_s3_key",
+            output_payload.get("ligand_input_s3_key", ""),
+        ),
         docked_pose_sdf_s3_key=output_payload.get("docked_pose_sdf_s3_key"),
+        docked_pose_s3_key=output_payload.get("docked_pose_s3_key"),
         viewer_url=f"/api/docking/jobs/{job_id}/view",
         limitation_note=output_payload.get("limitation_note", LIMITATION_NOTE),
     )
@@ -116,12 +121,14 @@ def view_docking_result(job_id: str) -> HTMLResponse:
     output_payload = get_docking_output(job_id)
 
     receptor_key = output_payload["receptor_pdb_s3_key"]
-    docked_pose_key = output_payload.get("docked_pose_sdf_s3_key")
+    docked_pose_key = output_payload.get("docked_pose_s3_key") or output_payload.get(
+        "docked_pose_sdf_s3_key"
+    )
 
     if not docked_pose_key:
         raise HTTPException(
             status_code=404,
-            detail="Docked pose SDF is missing from docking output.",
+            detail="Docked pose file is missing from docking output.",
         )
 
     receptor_url = create_presigned_s3_url(receptor_key)
@@ -173,7 +180,7 @@ def view_docking_result(job_id: str) -> HTMLResponse:
             viewer.addModel(receptorData, "pdb");
             viewer.setStyle({{}}, {{ cartoon: {{ color: "spectrum" }} }});
 
-            viewer.addModel(ligandData, "sdf");
+            viewer.addModel(ligandData, "{'pdbqt' if output_payload.get('docked_pose_s3_key') else 'sdf'}");
             viewer.setStyle({{ model: 1 }}, {{ stick: {{ colorscheme: "greenCarbon", radius: 0.22 }} }});
 
             viewer.zoomTo();

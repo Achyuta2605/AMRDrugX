@@ -46,12 +46,14 @@ class DockingJobResult(BaseModel):
     bindingdb_monomer_id: Optional[str] = None
     docking_backend: str
     docking_status: str
+    best_affinity_kcal_mol: Optional[float] = None
     docking_score: Optional[float] = None
     cnn_score: Optional[float] = None
     cnn_affinity: Optional[float] = None
     receptor_pdb_s3_key: str
     ligand_sdf_s3_key: str
     docked_pose_sdf_s3_key: Optional[str] = None
+    docked_pose_s3_key: Optional[str] = None
     viewer_url: Optional[str] = None
     limitation_note: str
 
