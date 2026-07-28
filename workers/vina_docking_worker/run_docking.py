@@ -110,13 +110,8 @@ def prepare_ligand(ligand_input_path: Path, ligand_pdbqt_path: Path) -> None:
     )
 
 
-def parse_best_affinity(vina_log_path: Path) -> Optional[float]:
-    if not vina_log_path.exists():
-        return None
-
-    text = vina_log_path.read_text(encoding="utf-8", errors="ignore")
-
-    for line in text.splitlines():
+def parse_best_affinity(vina_output: str) -> Optional[float]:
+    for line in vina_output.splitlines():
         match = re.match(r"\s*1\s+(-?\d+(?:\.\d+)?)\s+", line)
         if match:
             return float(match.group(1))
@@ -128,10 +123,9 @@ def run_vina(
     receptor_pdbqt_path: Path,
     ligand_pdbqt_path: Path,
     docked_pose_path: Path,
-    vina_log_path: Path,
     box_center: Dict[str, float],
     box_size: Dict[str, float],
-) -> None:
+) -> str:
     command = [
         "vina",
         "--receptor",
@@ -152,11 +146,9 @@ def run_vina(
         str(box_size["z"]),
         "--out",
         str(docked_pose_path),
-        "--log",
-        str(vina_log_path),
     ]
 
-    run_command(command)
+    return run_command(command)
 
 
 def build_output_payload(
@@ -207,7 +199,7 @@ def main() -> int:
         ligand_input_path = WORK_DIR / LIGAND_INPUT_FILENAME
         ligand_pdbqt_path = WORK_DIR / LIGAND_PDBQT_FILENAME
         docked_pose_path = WORK_DIR / DOCKED_POSE_PDBQT_FILENAME
-        vina_log_path = WORK_DIR / VINA_LOG_FILENAME
+        # vina_log_path = WORK_DIR / VINA_LOG_FILENAME
 
         download_s3_file(
             client,
@@ -225,16 +217,15 @@ def main() -> int:
         prepare_receptor(receptor_pdb_path, receptor_pdbqt_path)
         prepare_ligand(ligand_input_path, ligand_pdbqt_path)
 
-        run_vina(
+        vina_output = run_vina(
             receptor_pdbqt_path=receptor_pdbqt_path,
             ligand_pdbqt_path=ligand_pdbqt_path,
             docked_pose_path=docked_pose_path,
-            vina_log_path=vina_log_path,
             box_center=input_payload["box_center"],
             box_size=input_payload["box_size"],
         )
 
-        best_affinity = parse_best_affinity(vina_log_path)
+        best_affinity = parse_best_affinity(vina_output)
 
         docked_pose_s3_key = input_payload.get(
             "docked_pose_s3_key",
