@@ -107,9 +107,19 @@ def find_prediction_csv(output_dir: Path) -> Path:
     return csv_files[0]
 
 
+def normalize_row(row: Dict[str, str]) -> Dict[str, str]:
+    return {
+        key.strip(): value.strip()
+        for key, value in row.items()
+        if key is not None and value is not None
+    }
+
+
 def parse_float(row: Dict[str, str], names: List[str]) -> Optional[float]:
+    normalized_row = normalize_row(row)
+
     for name in names:
-        value = row.get(name)
+        value = normalized_row.get(name)
         if value is None or value == "":
             continue
 
@@ -135,13 +145,14 @@ def parse_top_pocket(output_dir: Path) -> Dict[str, Any]:
         raise RuntimeError("P2Rank predictions CSV is empty.")
 
     top_row = rows[0]
+    print("P2Rank prediction CSV columns:", list(top_row.keys()))
 
     score = parse_float(top_row, ["score", "Score"])
     probability = parse_float(top_row, ["probability", "Probability", "prob"])
 
-    center_x = parse_float(top_row, ["center_x", "x", "Center X"])
-    center_y = parse_float(top_row, ["center_y", "y", "Center Y"])
-    center_z = parse_float(top_row, ["center_z", "z", "Center Z"])
+    center_x = parse_float(top_row, ["center_x", "center x", "x", "Center X"])
+    center_y = parse_float(top_row, ["center_y", "center y", "y", "Center Y"])
+    center_z = parse_float(top_row, ["center_z", "center z", "z", "Center Z"])
 
     if center_x is None or center_y is None or center_z is None:
         raise RuntimeError(
