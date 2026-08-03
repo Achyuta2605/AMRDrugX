@@ -10,6 +10,7 @@ from app.api.routes import (
     proteins,
     targets,
     binding_site_routes,
+    interaction_routes,
 )
 
 app = FastAPI(
@@ -27,3 +28,4 @@ app.include_router(candidate_retrieval.router)
 app.include_router(bindingdb_evaluation.router)
 app.include_router(docking_routes.router)
 app.include_router(binding_site_routes.router)
+app.include_router(interaction_routes.router)

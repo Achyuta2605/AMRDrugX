@@ -1,0 +1,19 @@
+version: 0.2
+
+phases:
+  pre_build:
+    commands:
+      - echo Logging in to Amazon ECR
+      - aws ecr get-login-password --region "$AWS_DEFAULT_REGION" | docker login --username AWS --password-stdin "$AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com"
+      - IMAGE_URI="$AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$IMAGE_REPO_NAME:$IMAGE_TAG"
+      - echo Image URI is "$IMAGE_URI"
+
+  build:
+    commands:
+      - echo Building AMRDrugX PLIP interaction worker image
+      - docker build -f workers/interaction_worker/Dockerfile -t "$IMAGE_URI" workers/interaction_worker
+
+  post_build:
+    commands:
+      - echo Pushing AMRDrugX PLIP interaction worker image
+      - docker push "$IMAGE_URI"
