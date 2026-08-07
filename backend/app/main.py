@@ -11,6 +11,7 @@ from app.api.routes import (
     targets,
     binding_site_routes,
     interaction_routes,
+    workflow_routes,
 )
 
 app = FastAPI(
@@ -29,3 +30,4 @@ app.include_router(bindingdb_evaluation.router)
 app.include_router(docking_routes.router)
 app.include_router(binding_site_routes.router)
 app.include_router(interaction_routes.router)
+app.include_router(workflow_routes.router)
