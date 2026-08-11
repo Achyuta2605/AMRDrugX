@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-
+from fastapi.middleware.cors import CORSMiddleware
 from app.api.routes import (
     bindingdb_evaluation,
     candidate_retrieval,
@@ -14,10 +14,21 @@ from app.api.routes import (
     workflow_routes,
 )
 
+
 app = FastAPI(
     title="AMRDrugX API",
     description="Free-first AI-assisted antimicrobial resistance drug discovery prototype.",
     version="0.1.0",
+)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://localhost:4200",
+        "http://127.0.0.1:4200",
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 app.include_router(health.router)
