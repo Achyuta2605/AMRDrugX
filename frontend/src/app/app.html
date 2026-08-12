@@ -1,237 +1,350 @@
-<main class="shell">
-  <section class="hero">
-    <div>
-      <p class="eyebrow">AMRDrugX Research Workbench</p>
-      <h1>AMR workflow orchestration</h1>
-      <p class="subtitle">
-        Connect target resolution, AI screening, binding-site prediction,
-        docking, and interaction analysis from one workflow entry point.
-      </p>
+<div class="workbench">
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <span>AMRDrugX</span>
+      <small>Research Console</small>
     </div>
 
-    <button class="primary-action" type="button" (click)="prepareWorkflow()" [disabled]="loading()">
-      {{ loading() ? 'Preparing...' : 'Prepare workflow' }}
-    </button>
-  </section>
+    <nav class="sidebar-nav">
+      <a href="#setup">Setup</a>
+      <a href="#candidates">Candidate Selection</a>
+      <a href="#ranking">DeepPurpose Ranking</a>
+      <a href="#binding-site">Prediction Outcome</a>
+      <a href="#docking">Pipeline Flow</a>
+      <a href="#interactions">Live Actions</a>
+    </nav>
+  </aside>
 
-  <section class="workspace">
-    <aside class="input-panel">
-      <h2>Input</h2>
+  <main class="main-workspace">
 
-      <label>
-        Resistance mechanism
-        <input type="text" [value]="form.resistance_mechanism" readonly />
-      </label>
+    <div class="shell">
+      <header class="app-header">
+        <div>
+          <p class="eyebrow">Workflow</p>
+          <h1>AMR target-to-interaction workspace</h1>
+          <p class="subtitle">
+            Prepare target context, inspect saved model outputs, and move through candidate
+            ranking, binding-site prediction, docking, and interaction analysis.
+          </p>
+        </div>
 
-      <label>
-        Enzyme
-        <input type="text" [value]="form.enzyme" readonly />
-      </label>
-
-      <label>
-        Organism
-        <input type="text" [value]="form.organism" readonly />
-      </label>
-
-      <p class="note">
-        MVP is prefilled for KPC beta-lactamase / carbapenem resistance.
-      </p>
-    </aside>
-
-    <section class="result-panel">
-      @if (errorMessage()) {
-      <div class="error-box">
-        {{ errorMessage() }}
+        <button class="primary-action" type="button" (click)="prepareWorkflow()" [disabled]="loading()">
+          {{ loading() ? 'Preparing...' : 'Prepare workflow' }}
+        </button>
+      </header>
+      <div class="status-strip">
+        <span>Mode: saved demo outputs</span>
+        <span>Target: KPC beta-lactamase</span>
+        <span>UniProt: Q9F663</span>
+        <span>Backend: FastAPI + AWS S3</span>
       </div>
-      }
 
-      @if (!workflow()) {
-      <div class="empty-state">
-        <h2>Ready to connect the backend pipeline</h2>
-        <p>
-          Prepare a workflow to load target metadata, known inputs, completed
-          demo jobs, and next available research actions.
-        </p>
-      </div>
-      }
+      <section class="workspace">
+        <aside id="setup" class="input-panel">
+          <h2>Input</h2>
 
-      @if (workflow(); as wf) {
-      <div class="summary-grid">
-        <article class="panel">
-          <h2>Target</h2>
-          <dl>
-            <div>
-              <dt>Name</dt>
-              <dd>{{ wf.target.target_name }}</dd>
-            </div>
-            <div>
-              <dt>Gene</dt>
-              <dd>{{ wf.target.gene || 'Not available' }}</dd>
-            </div>
-            <div>
-              <dt>Organism</dt>
-              <dd>{{ wf.target.organism || 'Not available' }}</dd>
-            </div>
-            <div>
-              <dt>UniProt</dt>
-              <dd>{{ wf.target.uniprot_accession || 'Not available' }}</dd>
-            </div>
-            <div>
-              <dt>Confidence</dt>
-              <dd>{{ wf.target.confidence }}</dd>
-            </div>
-          </dl>
-        </article>
+          <label>
+            Resistance mechanism
+            <input type="text" [value]="form.resistance_mechanism" readonly />
+          </label>
 
-        <article class="panel">
-          <h2>Known Inputs</h2>
-          <dl>
-            <div>
-              <dt>Receptor PDB</dt>
-              <dd>{{ wf.known_inputs.receptor_pdb_s3_key }}</dd>
-            </div>
-            <div>
-              <dt>Ligand</dt>
-              <dd>{{ wf.known_inputs.ligand_name }}</dd>
-            </div>
-            <div>
-              <dt>BindingDB ID</dt>
-              <dd>{{ wf.known_inputs.bindingdb_monomer_id }}</dd>
-            </div>
-            <div>
-              <dt>Ligand SDF</dt>
-              <dd>{{ wf.known_inputs.ligand_sdf_s3_key }}</dd>
-            </div>
-          </dl>
-        </article>
+          <label>
+            Enzyme
+            <input type="text" [value]="form.enzyme" readonly />
+          </label>
 
-        <article class="panel">
-          <h2>Completed Demo Jobs</h2>
-          <ul class="job-list">
-            <li>
-              <div class="job-main">
-                <span>P2Rank</span>
-                <code>{{ wf.completed_demo_jobs.binding_site_job_id }}</code>
-              </div>
-              <div class="job-actions">
-                <a [href]="getBindingSiteResultUrl(wf)" target="_blank" rel="noreferrer">
-                  Open result
-                </a>
-              </div>
-            </li>
+          <label>
+            Organism
+            <input type="text" [value]="form.organism" readonly />
+          </label>
 
-            <li>
-              <div class="job-main">
-                <span>Vina</span>
-                <code>{{ wf.completed_demo_jobs.docking_job_id }}</code>
-              </div>
-              <div class="job-actions">
-                <a [href]="getDockingResultUrl(wf)" target="_blank" rel="noreferrer">
-                  Open result
-                </a>
-                <a [href]="getDockingViewerUrl(wf)" target="_blank" rel="noreferrer">
-                  Open 3D viewer
-                </a>
-              </div>
-            </li>
+          <p class="note">
+            MVP is prefilled for KPC beta-lactamase / carbapenem resistance.
+          </p>
+        </aside>
 
-            <li>
-              <div class="job-main">
-                <span>PLIP</span>
-                <code>{{ wf.completed_demo_jobs.interaction_job_id }}</code>
-              </div>
-              <div class="job-actions">
-                <a [href]="getInteractionResultUrl(wf)" target="_blank" rel="noreferrer">
-                  Open result
-                </a>
-              </div>
-            </li>
-          </ul>
-          <div class="demo-summaries">
-            @if (bindingSiteSummary()) {
-            <p>
-              <strong>P2Rank:</strong>
-              {{ bindingSiteSummary() }}
-            </p>
-            }
-
-            @if (dockingSummary()) {
-            <p>
-              <strong>Vina:</strong>
-              {{ dockingSummary() }}
-            </p>
-            }
-
-            @if (interactionSummary()) {
-            <p>
-              <strong>PLIP:</strong>
-              {{ interactionSummary() }}
-            </p>
-            }
+        <section class="result-panel">
+          @if (errorMessage()) {
+          <div class="error-box">
+            {{ errorMessage() }}
           </div>
-        </article>
-        <article class="panel outcome-panel">
-          <h2>Demo Outcome</h2>
+          }
 
-          <div class="outcome-list">
+          @if (!workflow()) {
+          <div class="empty-state">
+            <h2>Ready to connect the backend pipeline</h2>
+            <p>
+              Prepare a workflow to load target metadata, known inputs, completed
+              demo jobs, and next available research actions.
+            </p>
+          </div>
+          }
+
+          @if (workflow(); as wf) {
+          <section class="result-summary-band">
             <div>
-              <span>Predicted pocket</span>
+              <span>Binding-site pocket</span>
               <strong>{{ bindingSiteSummary() || 'Waiting for result' }}</strong>
             </div>
 
             <div>
-              <span>Docking score</span>
+              <span>Docking affinity</span>
               <strong>{{ dockingSummary() || 'Waiting for result' }}</strong>
             </div>
 
             <div>
-              <span>Interaction analysis</span>
+              <span>Interactions</span>
               <strong>{{ interactionSummary() || 'Waiting for result' }}</strong>
             </div>
+          </section>
+          <div class="summary-grid">
+            <article class="panel">
+              <h2>Target</h2>
+              <dl>
+                <div>
+                  <dt>Name</dt>
+                  <dd>{{ wf.target.target_name }}</dd>
+                </div>
+                <div>
+                  <dt>Gene</dt>
+                  <dd>{{ wf.target.gene || 'Not available' }}</dd>
+                </div>
+                <div>
+                  <dt>Organism</dt>
+                  <dd>{{ wf.target.organism || 'Not available' }}</dd>
+                </div>
+                <div>
+                  <dt>UniProt</dt>
+                  <dd>{{ wf.target.uniprot_accession || 'Not available' }}</dd>
+                </div>
+                <div>
+                  <dt>Confidence</dt>
+                  <dd>{{ wf.target.confidence }}</dd>
+                </div>
+              </dl>
+            </article>
+
+            <article class="panel">
+              <h2>Known Inputs</h2>
+              <dl>
+                <div>
+                  <dt>Receptor PDB</dt>
+                  <dd>{{ wf.known_inputs.receptor_pdb_s3_key }}</dd>
+                </div>
+                <div>
+                  <dt>Ligand</dt>
+                  <dd>{{ wf.known_inputs.ligand_name }}</dd>
+                </div>
+                <div>
+                  <dt>BindingDB ID</dt>
+                  <dd>{{ wf.known_inputs.bindingdb_monomer_id }}</dd>
+                </div>
+                <div>
+                  <dt>Ligand SDF</dt>
+                  <dd>{{ wf.known_inputs.ligand_sdf_s3_key }}</dd>
+                </div>
+              </dl>
+            </article>
+
+            <article class="panel">
+              <div class="panel-title-row">
+                <h2>Completed Demo Jobs</h2>
+                <span>Saved demo</span>
+              </div>
+              <p class="panel-note">
+                These are saved outputs from the validated KPC demo run.
+              </p>
+
+              <ul class="job-list">
+                <li>
+                  <div class="job-main">
+                    <span>P2Rank</span>
+                    <code>{{ wf.completed_demo_jobs.binding_site_job_id }}</code>
+                  </div>
+                  <div class="job-actions">
+                    <a [href]="getBindingSiteResultUrl(wf)" target="_blank" rel="noreferrer">
+                      Open result
+                    </a>
+                  </div>
+                </li>
+
+                <li>
+                  <div class="job-main">
+                    <span>Vina</span>
+                    <code>{{ wf.completed_demo_jobs.docking_job_id }}</code>
+                  </div>
+                  <div class="job-actions">
+                    <a [href]="getDockingResultUrl(wf)" target="_blank" rel="noreferrer">
+                      Open result
+                    </a>
+                    <a [href]="getDockingViewerUrl(wf)" target="_blank" rel="noreferrer">
+                      Open 3D viewer
+                    </a>
+                  </div>
+                </li>
+
+                <li>
+                  <div class="job-main">
+                    <span>PLIP</span>
+                    <code>{{ wf.completed_demo_jobs.interaction_job_id }}</code>
+                  </div>
+                  <div class="job-actions">
+                    <a [href]="getInteractionResultUrl(wf)" target="_blank" rel="noreferrer">
+                      Open result
+                    </a>
+                  </div>
+                </li>
+              </ul>
+
+              <div class="demo-summaries">
+                @if (bindingSiteSummary()) {
+                <p>
+                  <strong>P2Rank:</strong>
+                  {{ bindingSiteSummary() }}
+                </p>
+                }
+
+                @if (dockingSummary()) {
+                <p>
+                  <strong>Vina:</strong>
+                  {{ dockingSummary() }}
+                </p>
+                }
+
+                @if (interactionSummary()) {
+                <p>
+                  <strong>PLIP:</strong>
+                  {{ interactionSummary() }}
+                </p>
+                }
+              </div>
+            </article>
+
+            <article id="binding-site" class="panel outcome-panel">
+              <h2>Demo Outcome</h2>
+
+              <div class="mode-banner">
+                Displaying saved demo outputs. No AWS model or docking task is launched by this button.
+              </div>
+
+              <button class="disabled-pipeline-button" type="button" disabled>
+                Run full live pipeline
+              </button>
+
+              <div class="outcome-list">
+                <div>
+                  <span>Predicted pocket</span>
+                  <strong>{{ bindingSiteSummary() || 'Waiting for result' }}</strong>
+                </div>
+
+                <div>
+                  <span>Docking score</span>
+                  <strong>{{ dockingSummary() || 'Waiting for result' }}</strong>
+                </div>
+
+                <div>
+                  <span>Interaction analysis</span>
+                  <strong>{{ interactionSummary() || 'Waiting for result' }}</strong>
+                </div>
+              </div>
+
+              <p>
+                P2Rank identifies the binding pocket, Vina docks the BindingDB ligand into that
+                region, and PLIP summarizes predicted protein-ligand interactions.
+              </p>
+
+              @if (workflow()) {
+              <a class="primary-result-link" [href]="getDockingViewerUrl(workflow()!)" target="_blank" rel="noreferrer">
+                Open 3D docking viewer
+              </a>
+              }
+            </article>
+
+            <article id="candidates" class="panel selection-panel">
+              <h2>Candidate Selection</h2>
+
+
+              <div class="selection-placeholder">
+                <span>Selected molecule</span>
+                <strong>BindingDB monomer 50053173</strong>
+                <small>
+                  Current demo uses the validated BindingDB/Vina test ligand. Live selection will
+                  connect to retrieved candidates and DeepPurpose rankings.
+                </small>
+              </div>
+            </article>
+            <article id="ranking" class="panel deeppurpose-panel">
+              <h2>DeepPurpose Ranking</h2>
+
+              <p class="panel-note">
+                Live ranking will score retrieved candidates against the selected target protein.
+              </p>
+
+              <div class="ranking-placeholder">
+                <span>Current demo ligand</span>
+                <strong>BindingDB monomer 50053173</strong>
+                <small>
+                  The MVP uses the already-screened BindingDB ligand for downstream docking and
+                  interaction analysis. Candidate ranking controls will be connected next.
+                </small>
+              </div>
+            </article>
+
+            <article id="interactions" class="panel">
+              <h2>Next Actions</h2>
+              <ul class="action-list">
+                @for (step of wf.recommended_next_steps; track step) {
+                <li>
+                  <span>{{ step }}</span>
+                  <code>{{ wf.action_endpoints[step] }}</code>
+                </li>
+                }
+              </ul>
+            </article>
           </div>
 
-          <p>
-            P2Rank identifies the binding pocket, Vina docks the BindingDB ligand into that
-            region, and PLIP summarizes predicted protein-ligand interactions.
+          <section id="docking" class="pipeline">
+            <h2>Connected Pipeline</h2>
+            <div class="pipeline-flow">
+              <span>Input</span>
+              <span>Target</span>
+              <span>Candidates</span>
+              <span>DeepPurpose</span>
+              <span>Select Molecule</span>
+              <span>P2Rank</span>
+              <span>Vina</span>
+              <span>PLIP</span>
+            </div>
+            <div class="workflow-explainer">
+              <div>
+                <strong>1. Retrieve candidates</strong>
+                <span>Find molecules linked to the resolved AMR target using public databases.</span>
+              </div>
+
+              <div>
+                <strong>2. Rank with DeepPurpose</strong>
+                <span>Score retrieved molecules against the selected protein target.</span>
+              </div>
+
+              <div>
+                <strong>3. Choose molecule for docking</strong>
+                <span>Select one ranked molecule for pocket prediction, docking, and interaction analysis.</span>
+              </div>
+            </div>
+            <div class="pipeline-steps">
+              <span>Target</span>
+              <span>Candidates</span>
+              <span>DeepPurpose</span>
+              <span>P2Rank</span>
+              <span>Vina</span>
+              <span>PLIP</span>
+            </div>
+          </section>
+
+          <p class="safety-note">
+            {{ wf.safety_note }}
           </p>
-        </article>
-
-        <article class="panel">
-          <h2>Next Actions</h2>
-          <ul class="action-list">
-            @for (step of wf.recommended_next_steps; track step) {
-            <li>
-              <span>{{ step }}</span>
-              <code>{{ wf.action_endpoints[step] }}</code>
-            </li>
-            }
-          </ul>
-        </article>
-      </div>
-
-      <section class="pipeline">
-        <h2>Connected Pipeline</h2>
-        <div class="pipeline-flow">
-          <span>Input</span>
-          <span>Target</span>
-          <span>P2Rank</span>
-          <span>Vina</span>
-          <span>PLIP</span>
-        </div>
-        <div class="pipeline-steps">
-          <span>Target</span>
-          <span>Candidates</span>
-          <span>DeepPurpose</span>
-          <span>P2Rank</span>
-          <span>Vina</span>
-          <span>PLIP</span>
-        </div>
+          }
+        </section>
       </section>
-
-      <p class="safety-note">
-        {{ wf.safety_note }}
-      </p>
-      }
-    </section>
-  </section>
-</main>
+    </div>
